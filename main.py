@@ -63,6 +63,7 @@ class Timer(pyglet.text.Label):
 #класс игры в сапер
 class Main_game:
     def __init__(self):
+        self.mines_number = 15 #целевое кол-во мин
         self.game_height = 10
         self.game_width = 10
         self.cell_size = 45
@@ -70,6 +71,7 @@ class Main_game:
         self.game_started = False
         self.game_timer = Timer(x=game_window.width // 2 - 200, y=game_window.height - 130, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
         self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=20, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height - 50, batch=batch) 
+        self.flag_number_label = pyglet.text.Label(text=f'*:{self.mines_number}', font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='center', align='center', x=game_window.width // 2 + 100, y=game_window.height - 130, batch=batch)
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
@@ -77,19 +79,22 @@ class Main_game:
         game_window.push_handlers(self)
     
     def minesweeper_matrix_clear(self):
-        self.mines_count = -1
         self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)]
     #создание двумерного списка(матрицы), в соответствии с которой создается 'минное поле'
     def create_minesweeper_matrix(self, x:int=None, y:int=None):
-        self.mines_count = 0
+        mines_count = 0
         generator_matrix = [[0] * (self.game_width) for _ in range(self.game_height)] #матрица с нулями и единицами
         self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)] #матрица с числами и 'b'
 
-        while self.mines_count < 15:
+        while mines_count < self.mines_number:
             row = random.choice(generator_matrix)
             row[random.randrange(len(row))] = 1
-            generator_matrix[y][x] = 0
-            self.mines_count = sum(sum(row) for row in generator_matrix)
+            '''neighbours = list(get_neighbours_index(generator_matrix, y, x))
+            for y, x in random.choices(neighbours, k=random.randrange(1, len(neighbours))):
+                generator_matrix[y][x] = 0'''
+            generator_matrix[y][x] = 0        
+
+            mines_count = sum(sum(row) for row in generator_matrix)
         generator_matrix.reverse()
         ######
         for row in generator_matrix:
@@ -143,6 +148,7 @@ class Main_game:
 
     def update(self, dt): #метод обновления состояния игры
         openned_counter = 0
+        flagged = 0
         if self.game_state == GAME:
             for row in self.cells:
                 for cell in row:
@@ -151,9 +157,12 @@ class Main_game:
                         if cell.value == 'b':
                             self.game_state = LOSS
                             return
-            if openned_counter + self.mines_count == self.game_height * self.game_width:
-                self.game_state = WIN
-                
+                    elif cell.rmb_state == 'f':
+                        flagged += 1
+            self.flag_number_label.text = f'*: {max(0, self.mines_number - flagged)}'
+
+            if openned_counter + self.mines_number == self.game_height * self.game_width:
+                self.game_state = WIN                
         else:                                                                      #конец игры
             self.game_state_label.text = self.game_state
             pyglet.clock.unschedule(self.update)
