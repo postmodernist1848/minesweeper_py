@@ -13,7 +13,7 @@ from cell import Cell
 #взрывы при проигранной игре
 
 #-------------- Строковые константы ---------------------------------------
-GAME = 'Игра'
+GAME = '☺'
 WIN = 'Вы выиграли!'
 LOSS = 'Вы проиграли!'
 
@@ -35,7 +35,8 @@ def get_neighbours_index(arr:list, i, j, radius=1):            #функция �
 #----------------------------------------------------------------------------
 
 batch = pyglet.graphics.Batch()
-game_window = Window(960, 750, "Сапёр")
+game_window = Window(700, 700, "Сапёр", resizable=True)
+game_window.set_minimum_size(320, 200)
 pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
 
 #таймер для игры
@@ -68,13 +69,13 @@ class Main_game:
         self.game_height = 20
         self.game_width = 20
         self.mines_number = int(self.game_width * self.game_height * 0.15) #целевое кол-во мин
-        self.cell_size = 30
+        self.cell_size = min(game_window.width, game_window.height) // 28
         self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
         self.game_state = GAME
         self.game_started = False
-        self.game_timer = Timer(x=game_window.width // 2 - 200, y=game_window.height - 130, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
-        self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=20, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height - 50, batch=batch) 
-        self.flag_number_label = pyglet.text.Label(text=f'*:{self.mines_number}', font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='center', align='center', x=game_window.width // 2 + 100, y=game_window.height - 130, batch=batch)
+        self.game_timer = Timer(x=self.game_offset_x, y=57/70 * game_window.height, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
+        self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height * 13/14, batch=batch) 
+        self.flag_number_label = pyglet.text.Label(text=f'*:{self.mines_number}', font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='right', align='right', x=self.game_offset_x + self.game_width * self.cell_size, y= 57/70 * game_window.height, batch=batch)
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
@@ -131,6 +132,7 @@ class Main_game:
                     pass
         elif self.game_state == LOSS:
             pyglet.clock.unschedule(self.blow_up_field)
+
     def on_key_press(self, symbol, modifiers):
         if symbol == key.C:  #читы - победа по нажатию кнопки
             for row in self.cells:
@@ -139,6 +141,20 @@ class Main_game:
                         cell.open()
         elif symbol == key.R: #ресет игры
             self.game_reset()
+
+    def on_resize(self, width, height):
+        self.cell_size = min(game_window.width, game_window.height) // 28
+        scale = self.cell_size / 30
+        self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
+        for i, row in enumerate(self.cells):
+            for j, cell in enumerate(row):
+                cell.scale = scale
+                cell.x = j * self.cell_size + self.game_offset_x
+                cell.y = i * self.cell_size
+        self.game_timer.x, self.game_timer.y, self.game_timer.font_size = self.game_offset_x, 57/70 * game_window.height, 32 * scale
+        self.game_state_label.x, self.game_state_label.y, self.game_state_label.font_size = game_window.width // 2, game_window.height * 13/14, 32 * scale
+        self.flag_number_label.x, self.flag_number_label.y, self.flag_number_label.font_size = self.game_offset_x + self.game_width * self.cell_size, 57/70 * game_window.height, 32 * scale
+
 
     def update(self, dt): #метод обновления состояния игры
         openned_counter = 0

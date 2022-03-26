@@ -59,6 +59,7 @@ class Cell(pyglet.sprite.Sprite):
     def explode(self, force:bool=False):
         if self.value == 'b' or force:
             explosion_sprite = pyglet.sprite.Sprite(img=Cell.expl_ani, x=self.x, y=self.y, batch=self.batch)
+            explosion_sprite.scale = self.scale
             Cell.explosion.play()
 
 
