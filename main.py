@@ -1,3 +1,4 @@
+from operator import ne
 import pyglet
 from pyglet.window import key, Window
 import random
@@ -11,15 +12,31 @@ from cell import Cell
 #запись рекордом по времени в сейв файл
 #взрывы при проигранной игре
 
-#-------------- Константы ------------------------------------------------
+#-------------- Строковые онстанты ---------------------------------------
 GAME = 'Игра'
 WIN = 'Вы выиграли!'
 LOSS = 'Вы проиграли!'
 
 
 #---------------- Игра ---------------------------------------------------
+
+def get_neighbours(arr:list, i, j, radius=1):            #функция для нахождения соседей (элементов) всех клеток в двухмерном списке(матрице)
+        for y in range(i-radius, i + 1 + radius):
+            for x in range(j-radius, j + 1 + radius):
+                if y >= 0 and y < len(arr) and x >= 0 and x < len(arr[0]):
+                     yield arr[y][x]
+
+def get_neighbours_index(arr:list, i, j, radius=1):            #функция для нахождения индексов соседей всех клеток в двухмерном списке(матрице)
+        for y in range(i-radius, i + 1 + radius):
+            for x in range(j-radius, j + 1 + radius):
+                if y >= 0 and y < len(arr) and x >= 0 and x < len(arr[0]):
+                     yield (y, x)
+
+#----------------------------------------------------------------------------
+
 batch = pyglet.graphics.Batch()
 game_window = Window(450, 600, "Сапёр")
+pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
 
 #таймер для игры
 class Timer(pyglet.text.Label):           
@@ -28,9 +45,13 @@ class Timer(pyglet.text.Label):
         
         
     def start_timer(self):
-        self.text = '00:00'
+        self.reset_timer()
         self.start_time = time.time()
         pyglet.clock.schedule_interval(self.update, 0.5)
+
+    def reset_timer(self):
+        self.stop_timer()
+        self.text = '00:00'
 
     def stop_timer(self):
         pyglet.clock.unschedule(self.update)
@@ -47,35 +68,46 @@ class Main_game:
         self.cell_size = 45
         self.game_state = GAME
         self.game_started = False
-        self.game_timer = Timer(x=game_window.width // 2 - 200, y=game_window.height - 130, font_size=32, batch=batch)
-        self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', bold=True, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height - 50, batch=batch)
-        self.create_minesweeper_matrix()
-        for row in self.minesweeper_matrix:
-            print(*row)
+        self.game_timer = Timer(x=game_window.width // 2 - 200, y=game_window.height - 130, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
+        self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=20, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height - 50, batch=batch) 
+        self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
 
         game_window.push_handlers(self)
-        
-    #создание двумерного списка(матрицы), в соответствии с которой создается 'минное поле'
-    def create_minesweeper_matrix(self):
-        self.mines_count = 0
-        minesweeper_matrix = [[0] * (self.game_width + 2) for _ in range(self.game_height + 2)]
+    
+    def minesweeper_matrix_clear(self):
+        self.mines_count = -1
         self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)]
-        for i in range(1, self.game_height + 1):
-            for j in range(1, self.game_width + 1):
-                if random.random() < 0.15:
-                    minesweeper_matrix[i][j] = 1
-        for i in range(1, self.game_height + 1):
-            for j in range(1, self.game_width + 1):
-                if minesweeper_matrix[i][j] == 1:
-                    self.minesweeper_matrix[i - 1][j - 1] = 'b'
-                    self.mines_count += 1
-                else:
-                    neighbouring_cells = minesweeper_matrix[i - 1][j - 1] + minesweeper_matrix[i - 1][j] + minesweeper_matrix[i - 1][j + 1] + minesweeper_matrix[i][j - 1] + \
-                minesweeper_matrix[i][j + 1] + minesweeper_matrix[i + 1][j - 1] + minesweeper_matrix[i + 1][j] + minesweeper_matrix[i + 1][j + 1]
-                    self.minesweeper_matrix[i - 1][j - 1] = neighbouring_cells
+    #создание двумерного списка(матрицы), в соответствии с которой создается 'минное поле'
+    def create_minesweeper_matrix(self, x:int=None, y:int=None):
+        self.mines_count = 0
+        generator_matrix = [[0] * (self.game_width) for _ in range(self.game_height)] #матрица с нулями и единицами
+        self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)] #матрица с числами и 'b'
 
+        while self.mines_count < 15:
+            row = random.choice(generator_matrix)
+            row[random.randrange(len(row))] = 1
+            generator_matrix[y][x] = 0
+            self.mines_count = sum(sum(row) for row in generator_matrix)
+        generator_matrix.reverse()
+        ######
+        for row in generator_matrix:
+            print(*row)
+        print('-' * 20)
+        ######
+        for i in range(self.game_height ):
+            for j in range(self.game_width):
+                if generator_matrix[i][j] == 1:
+                    self.minesweeper_matrix[i][j] = 'b'
+                else:
+                    neighbouring_cells_sum = sum(get_neighbours(generator_matrix, i, j))
+                    self.minesweeper_matrix[i][j] = neighbouring_cells_sum
+        ######
+        for row in self.minesweeper_matrix:
+            print(*row)
+        print('-' * 20)
+        ######
     #создание 'минного поля' из спрайтов 
     def create_minefield(self):
         self.cells = []
@@ -90,16 +122,14 @@ class Main_game:
         if self.game_state == GAME:
             if button == pyglet.window.mouse.LEFT:
                 try:
-                    self.cells[y // self.cell_size][x // self.cell_size].open()  #лкм - открытие клетки
+                    self.cells[y // self.cell_size][x // self.cell_size].open()  #лкм - открытие клетки 
                     if not self.game_started:
-                        self.game_start()                
+                        self.game_start(x // self.cell_size, y // self.cell_size,)               
                 except IndexError: 
                     pass
             elif button == pyglet.window.mouse.RIGHT:
                 try:
                     self.cells[y // self.cell_size][x // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
-                    if not self.game_started:
-                        self.game_start()
                 except IndexError:
                     pass
     def on_key_press(self, symbol, modifiers):
@@ -129,20 +159,20 @@ class Main_game:
             pyglet.clock.unschedule(self.update)
             self.game_timer.stop_timer()
 
-    def game_start(self):
+    def game_start(self, x, y:tuple):
         self.game_started = True
         self.game_timer.start_timer()
+        self.create_minesweeper_matrix(x, y)
+        self.create_minefield()
+        self.cells[y][x].open()
 
     def game_reset(self): #название говорит само за себя
         self.game_state = GAME
         self.game_started = False
         self.game_state_label.text = self.game_state
-        self.create_minesweeper_matrix()
-        print('-' * 20)
-        for row in self.minesweeper_matrix:
-            print(*row)
+        self.game_timer.reset_timer()
+        self.minesweeper_matrix_clear()
         self.create_minefield()
-        self.game_timer.start_timer()
         pyglet.clock.schedule_interval(self.update, 1/60)
 
 main_game = Main_game()
