@@ -4,8 +4,7 @@ from pyglet.image import load
 from collections import deque
 
 class Cell(pyglet.sprite.Sprite):
-    expl1, expl2, expl3, expl4, expl5 = load('images/expl1.png'), load('images/expl2.png'), load('images/expl3.png'), load('images/expl4.png'), load('images/expl5.png')
-    explosion_frames = [expl1, expl2, expl3, expl4, expl5, expl4, expl3, expl2, expl1] 
+    explosion_frames = load('images/expl1.png'), load('images/expl2.png'), load('images/expl3.png'), load('images/expl4.png'), load('images/expl5.png'), load('images/expl6.png'), load('images/expl7.png'), load('images/expl8.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
     explosion = pyglet.media.load('explosion.wav', streaming=False)
     unopenned_image = load('images/unopenned.png')
