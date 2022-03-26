@@ -141,7 +141,8 @@ class Main_game:
                         cell.open()
         elif symbol == key.R: #ресет игры
             self.game_reset()
-
+        elif symbol == key.F11:
+            game_window.set_fullscreen(1 - game_window.fullscreen)
     def on_resize(self, width, height):
         self.cell_size = min(game_window.width, game_window.height) // 28
         scale = self.cell_size / 30
