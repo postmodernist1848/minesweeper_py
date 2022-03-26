@@ -35,7 +35,7 @@ def get_neighbours_index(arr:list, i, j, radius=1):            #функция �
 #----------------------------------------------------------------------------
 
 batch = pyglet.graphics.Batch()
-game_window = Window(450, 600, "Сапёр")
+game_window = Window(960, 750, "Сапёр")
 pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
 
 #таймер для игры
@@ -62,11 +62,13 @@ class Timer(pyglet.text.Label):
         
 #класс игры в сапер
 class Main_game:
+    explosion = pyglet.media.load('explosion.wav')
     def __init__(self):
-        self.mines_number = 15 #целевое кол-во мин
-        self.game_height = 10
-        self.game_width = 10
-        self.cell_size = 45
+        self.game_height = 20
+        self.game_width = 20
+        self.mines_number = int(self.game_width * self.game_height * 0.15) #целевое кол-во мин
+        self.cell_size = 30
+        self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
         self.game_state = GAME
         self.game_started = False
         self.game_timer = Timer(x=game_window.width // 2 - 200, y=game_window.height - 130, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
@@ -75,7 +77,6 @@ class Main_game:
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
-
         game_window.push_handlers(self)
     
     def minesweeper_matrix_clear(self):
@@ -88,11 +89,9 @@ class Main_game:
 
         while mines_count < self.mines_number:
             row = random.choice(generator_matrix)
-            row[random.randrange(len(row))] = 1
-            '''neighbours = list(get_neighbours_index(generator_matrix, y, x))
-            for y, x in random.choices(neighbours, k=random.randrange(1, len(neighbours))):
-                generator_matrix[y][x] = 0'''
-            generator_matrix[y][x] = 0        
+            row[random.randrange(len(row))] = 1 
+            for i, j in get_neighbours_index(generator_matrix, y, x):
+                generator_matrix[i][j] = 0       
 
             mines_count = sum(sum(row) for row in generator_matrix)
         generator_matrix.reverse()
@@ -120,21 +119,21 @@ class Main_game:
             row = []
             for x in range(0, self.game_width * self.cell_size, self.cell_size):
                 value = self.minesweeper_matrix[self.game_height - y//self.cell_size - 1][x//self.cell_size]
-                row.append(Cell(value=value, x=x, y=y, scale = self.cell_size / 30, batch=batch)) 
+                row.append(Cell(value=value, x=x + self.game_offset_x, y=y, scale = self.cell_size / 30, batch=batch)) 
             self.cells.append(row)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if self.game_state == GAME:
             if button == pyglet.window.mouse.LEFT:
                 try:
-                    self.cells[y // self.cell_size][x // self.cell_size].open()  #лкм - открытие клетки 
+                    self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].open()  #лкм - открытие клетки 
                     if not self.game_started:
-                        self.game_start(x // self.cell_size, y // self.cell_size,)               
+                        self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
                 except IndexError: 
                     pass
             elif button == pyglet.window.mouse.RIGHT:
                 try:
-                    self.cells[y // self.cell_size][x // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
+                    self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
                 except IndexError:
                     pass
     def on_key_press(self, symbol, modifiers):
@@ -150,16 +149,21 @@ class Main_game:
         openned_counter = 0
         flagged = 0
         if self.game_state == GAME:
-            for row in self.cells:
-                for cell in row:
+            for i, row in enumerate(self.cells):
+                for j, cell in enumerate(row):
                     if cell.openned:
                         openned_counter += 1
                         if cell.value == 'b':
                             self.game_state = LOSS
+                            Main_game.explosion.play()
                             return
+                        elif cell.unchecked:
+                            for y, x in get_neighbours_index(self.cells, i, j):
+                                self.cells[y][x].open()
+                            cell.unchecked = False
                     elif cell.rmb_state == 'f':
                         flagged += 1
-            self.flag_number_label.text = f'*: {max(0, self.mines_number - flagged)}'
+            self.flag_number_label.text = f'*:{max(0, self.mines_number - flagged)}'
 
             if openned_counter + self.mines_number == self.game_height * self.game_width:
                 self.game_state = WIN                

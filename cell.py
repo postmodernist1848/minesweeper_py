@@ -33,6 +33,7 @@ class Cell(pyglet.sprite.Sprite):
 
     def __init__(self, value=0, x=0, y=0, scale=1, batch=None, group=None):
         self.value = value
+        self.unchecked = not value
         self.openned = False 
         self.rmb_state = 'x'
         self.rmb_states_deque = deque(['x', 'f', '?'])
