@@ -4,8 +4,13 @@ from pyglet.image import load
 from collections import deque
 
 class Cell(pyglet.sprite.Sprite):
+    expl1, expl2, expl3, expl4, expl5 = load('images/expl1.png'), load('images/expl2.png'), load('images/expl3.png'), load('images/expl4.png'), load('images/expl5.png')
+    explosion_frames = [expl1, expl2, expl3, expl4, expl5, expl4, expl3, expl2, expl1] 
+    expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
+    explosion = pyglet.media.load('explosion.wav', streaming=False)
     unopenned_image = load('images/unopenned.png')
     bomb_image = load('images/bomb.png')
+    bomb_blownup_image = load('images/bomb_blownup.png')
     zero_image = load('images/zero.png')
     one_image = load('images/one.png')
     two_image = load('images/two.png')
@@ -26,7 +31,8 @@ class Cell(pyglet.sprite.Sprite):
                     6:six_image, 
                     7:seven_image, 
                     8:eight_image, 
-                    'b':bomb_image} 
+                    'b':bomb_image,
+                    'bb':bomb_blownup_image} 
     rmb_states_dict = {'x':unopenned_image, 
                         'f':flag_image, 
                         '?':question_mark_image}
@@ -51,3 +57,9 @@ class Cell(pyglet.sprite.Sprite):
             self.rmb_state = self.rmb_states_deque[0]
             self.image = self.rmb_states_dict[self.rmb_states_deque[0]]
             
+    def explode(self, force:bool=False):
+        if self.value == 'b' or force:
+            explosion_sprite = pyglet.sprite.Sprite(img=Cell.expl_ani, x=self.x, y=self.y, batch=self.batch)
+            Cell.explosion.play()
+
+

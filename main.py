@@ -12,7 +12,7 @@ from cell import Cell
 #запись рекордом по времени в сейв файл
 #взрывы при проигранной игре
 
-#-------------- Строковые онстанты ---------------------------------------
+#-------------- Строковые константы ---------------------------------------
 GAME = 'Игра'
 WIN = 'Вы выиграли!'
 LOSS = 'Вы проиграли!'
@@ -62,7 +62,8 @@ class Timer(pyglet.text.Label):
         
 #класс игры в сапер
 class Main_game:
-    explosion = pyglet.media.load('explosion.wav')
+
+    win = pyglet.media.load('win.wav')
     def __init__(self):
         self.game_height = 20
         self.game_width = 20
@@ -87,7 +88,7 @@ class Main_game:
         generator_matrix = [[0] * (self.game_width) for _ in range(self.game_height)] #матрица с нулями и единицами
         self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)] #матрица с числами и 'b'
 
-        while mines_count < self.mines_number:
+        while mines_count < self.mines_number:                       #генерация нужного количества мин, исключая точку клика
             row = random.choice(generator_matrix)
             row[random.randrange(len(row))] = 1 
             for i, j in get_neighbours_index(generator_matrix, y, x):
@@ -95,23 +96,15 @@ class Main_game:
 
             mines_count = sum(sum(row) for row in generator_matrix)
         generator_matrix.reverse()
-        ######
-        for row in generator_matrix:
-            print(*row)
-        print('-' * 20)
-        ######
-        for i in range(self.game_height ):
+
+        for i in range(self.game_height ):                                #генерация матрицы со значениями клеток
             for j in range(self.game_width):
                 if generator_matrix[i][j] == 1:
                     self.minesweeper_matrix[i][j] = 'b'
                 else:
                     neighbouring_cells_sum = sum(get_neighbours(generator_matrix, i, j))
                     self.minesweeper_matrix[i][j] = neighbouring_cells_sum
-        ######
-        for row in self.minesweeper_matrix:
-            print(*row)
-        print('-' * 20)
-        ######
+
     #создание 'минного поля' из спрайтов 
     def create_minefield(self):
         self.cells = []
@@ -131,11 +124,13 @@ class Main_game:
                         self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
                 except IndexError: 
                     pass
-            elif button == pyglet.window.mouse.RIGHT:
+            elif button == pyglet.window.mouse.RIGHT and self.game_started:
                 try:
                     self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
                 except IndexError:
                     pass
+        elif self.game_state == LOSS:
+            pyglet.clock.unschedule(self.blow_up_field)
     def on_key_press(self, symbol, modifiers):
         if symbol == key.C:  #читы - победа по нажатию кнопки
             for row in self.cells:
@@ -155,7 +150,8 @@ class Main_game:
                         openned_counter += 1
                         if cell.value == 'b':
                             self.game_state = LOSS
-                            Main_game.explosion.play()
+                            cell.value = 'bb'
+                            cell.explode(True)
                             return
                         elif cell.unchecked:
                             for y, x in get_neighbours_index(self.cells, i, j):
@@ -166,8 +162,13 @@ class Main_game:
             self.flag_number_label.text = f'*:{max(0, self.mines_number - flagged)}'
 
             if openned_counter + self.mines_number == self.game_height * self.game_width:
-                self.game_state = WIN                
+                self.game_state = WIN
+                Main_game.win.play()                
         else:                                                                      #конец игры
+            self.show_field()
+            if self.game_state == LOSS:
+                self.blown_up_counter = self.game_height * self.game_width - 1
+                pyglet.clock.schedule_interval(self.blow_up_field, 0.03)
             self.game_state_label.text = self.game_state
             pyglet.clock.unschedule(self.update)
             self.game_timer.stop_timer()
@@ -179,14 +180,29 @@ class Main_game:
         self.create_minefield()
         self.cells[y][x].open()
 
-    def game_reset(self): #название говорит само за себя
+    def game_reset(self): #ресет игры
         self.game_state = GAME
         self.game_started = False
         self.game_state_label.text = self.game_state
         self.game_timer.reset_timer()
+        pyglet.clock.unschedule(self.blow_up_field)
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
+
+    def show_field(self):
+        for row in self.cells:
+            for cell in row:
+                cell.rmb_state = 'x'
+                cell.open()
+            
+    def blow_up_field(self, dt):
+        self.cells[self.blown_up_counter // self.game_width][self.game_width - 1 - self.blown_up_counter % self.game_width].explode()
+        self.blown_up_counter -= 1
+        if self.blown_up_counter <= 0:
+            pyglet.clock.unschedule(self.blow_up_field)
+                
+
 
 main_game = Main_game()
 
