@@ -2,25 +2,26 @@ from typing import Deque
 import pyglet
 from pyglet.image import load
 from collections import deque
-
+from pyglet.resource import image
+pyglet.resource.path = ['images', 'sounds']
 class Cell(pyglet.sprite.Sprite):
-    explosion_frames = load('images/expl1.png'), load('images/expl2.png'), load('images/expl3.png'), load('images/expl4.png'), load('images/expl5.png'), load('images/expl6.png'), load('images/expl7.png'), load('images/expl8.png')
+    explosion_frames = image('expl1.png'), image('expl2.png'), image('expl3.png'), image('expl4.png'), image('expl5.png'), image('expl6.png'), image('expl7.png'), image('expl8.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
-    explosion = pyglet.media.load('explosion.wav', streaming=False)
-    unopenned_image = load('images/unopenned.png')
-    bomb_image = load('images/bomb.png')
-    bomb_blownup_image = load('images/bomb_blownup.png')
-    zero_image = load('images/zero.png')
-    one_image = load('images/one.png')
-    two_image = load('images/two.png')
-    three_image = load('images/three.png')
-    four_image = load('images/four.png')
-    five_image = load('images/five.png')
-    six_image = load('images/six.png')
-    seven_image = load('images/seven.png')
-    eight_image = load('images/eight.png')
-    flag_image = load('images/flag.png')
-    question_mark_image = load('images/question_mark.png')
+    explosion = pyglet.resource.media('explosion.wav', streaming=False)
+    unopenned_image = image('unopenned.png')
+    bomb_image = image('bomb.png')
+    bomb_blownup_image = image('bomb_blownup.png')
+    zero_image = image('zero.png')
+    one_image = image('one.png')
+    two_image = image('two.png')
+    three_image = image('three.png')
+    four_image = image('four.png')
+    five_image = image('five.png')
+    six_image = image('six.png')
+    seven_image = image('seven.png')
+    eight_image = image('eight.png')
+    flag_image = image('flag.png')
+    question_mark_image = image('question_mark.png')
     values_dict = {0:zero_image, 
                     1:one_image, 
                     2:two_image, 

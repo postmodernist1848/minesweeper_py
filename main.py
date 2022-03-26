@@ -63,8 +63,7 @@ class Timer(pyglet.text.Label):
         
 #класс игры в сапер
 class Main_game:
-
-    win = pyglet.media.load('win.wav')
+    win = pyglet.resource.media('win.wav')
     def __init__(self):
         self.game_height = 20
         self.game_width = 20
@@ -218,7 +217,6 @@ class Main_game:
         self.blown_up_counter -= 1
         if self.blown_up_counter <= 0:
             pyglet.clock.unschedule(self.blow_up_field)
-                
 
 
 main_game = Main_game()
