@@ -1,4 +1,4 @@
-# This is a Minesweeper made in Python
+# This is Minesweeper made in Python
 
 To run this code you need to install Pyglet:
 ```
