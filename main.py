@@ -5,7 +5,6 @@ import time
 from cell import Cell
 
 #TODO:
-#открытие всех соседних на среднюю кнопку мыши
 #менюшки
 #запись рекордов по времени в сейв файл
 
@@ -113,17 +112,19 @@ class Main_game:
     def on_mouse_press(self, x, y, button, modifiers):
         if self.game_state == GAME:
             if button == pyglet.window.mouse.LEFT:
-                try:
+                if self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width:
                     self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].open()  #лкм - открытие клетки 
                     if not self.game_started:
                         self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
-                except IndexError: 
-                    pass
-            elif button == pyglet.window.mouse.RIGHT and self.game_started:
-                try:
-                    self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
-                except IndexError:
-                    pass
+            elif button == pyglet.window.mouse.RIGHT and self.game_started and self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width:
+                self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
+            elif button == pyglet.window.mouse.MIDDLE and self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width:
+                neighbours = list(get_neighbours(self.cells, y // self.cell_size, (x - self.game_offset_x) // self.cell_size))
+                rmb_states = [cell.rmb_state for cell in neighbours]
+                if rmb_states.count('f') == self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].value:
+                    for cell in neighbours:
+                        cell.open()
+                    
         elif self.game_state == LOSS:
             pyglet.clock.unschedule(self.blow_up_field)
 
