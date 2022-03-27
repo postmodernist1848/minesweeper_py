@@ -110,16 +110,18 @@ class Main_game:
                 row.append(Cell(value=value, x=x + self.game_offset_x, y=y, scale = self.cell_size / 30, batch=batch)) 
             self.cells.append(row)
 
+    def __in_minefield_range(self, x, y): return self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width and 0 <= y < self.cell_size * self.game_height
+
     def on_mouse_press(self, x, y, button, modifiers):
         if self.game_state == GAME:
             if button == pyglet.window.mouse.LEFT:
-                if self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width:
+                if self.__in_minefield_range(x, y):
                     self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].open()  #лкм - открытие клетки 
                     if not self.game_started:
                         self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
-            elif button == pyglet.window.mouse.RIGHT and self.game_started and self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width:
+            elif button == pyglet.window.mouse.RIGHT and self.__in_minefield_range(x, y):
                 self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].on_rmb() #правая кнопка - переключение между закрытой клеткой, флагом и знаком вопроса
-            elif button == pyglet.window.mouse.MIDDLE and self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width:
+            elif button == pyglet.window.mouse.MIDDLE and self.__in_minefield_range(x, y):
                 neighbours = list(get_neighbours(self.cells, y // self.cell_size, (x - self.game_offset_x) // self.cell_size))
                 rmb_states = [cell.rmb_state for cell in neighbours]
                 if rmb_states.count('f') == self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].value:
