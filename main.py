@@ -7,6 +7,7 @@ from cell import Cell
 #TODO:
 #менюшки
 #запись рекордов по времени в сейв файл
+#улучшение масштабирования
 
 #-------------- Строковые константы ---------------------------------------
 GAME = '☺'
@@ -30,7 +31,7 @@ def get_neighbours_index(arr:list, i, j, radius=1):            #функция �
 
 batch = pyglet.graphics.Batch()
 game_window = Window(700, 700, "Сапёр", resizable=True)
-game_window.set_minimum_size(320, 200)
+game_window.set_minimum_size(320, 400)
 pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
 
 #таймер для игры
@@ -139,7 +140,7 @@ class Main_game:
         elif symbol == key.F11:
             game_window.set_fullscreen(1 - game_window.fullscreen)
     def on_resize(self, width, height):
-        self.cell_size = min(game_window.width, game_window.height) // 28
+        self.cell_size = min(game_window.width + 100, game_window.height) // 28
         scale = self.cell_size / 30
         self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
         for i, row in enumerate(self.cells):
@@ -150,7 +151,7 @@ class Main_game:
         self.game_timer.x, self.game_timer.y, self.game_timer.font_size = self.game_offset_x, 57/70 * game_window.height, 32 * scale
         self.game_state_label.x, self.game_state_label.y, self.game_state_label.font_size = game_window.width // 2, game_window.height * 13/14, 32 * scale
         self.flag_number_label.x, self.flag_number_label.y, self.flag_number_label.font_size = self.game_offset_x + self.game_width * self.cell_size, 57/70 * game_window.height, 32 * scale
-
+        print(width, height)
 
     def update(self, dt): #метод обновления состояния игры
         openned_counter = 0
