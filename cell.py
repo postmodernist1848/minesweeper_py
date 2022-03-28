@@ -6,7 +6,7 @@ pyglet.resource.path = ['images', 'sounds']
 
 #класс клетки на минном поле
 class Cell(pyglet.sprite.Sprite):
-    explosion_frames = image('expl1.png'), image('expl2.png'), image('expl3.png'), image('expl4.png'), image('expl5.png'), image('expl6.png'), image('expl7.png'), image('expl8.png')
+    explosion_frames = image('0.png'), image('1.png'), image('2.png'), image('3.png'), image('4.png'), image('5.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
     explosion = pyglet.resource.media('explosion.wav', streaming=False)
     unopenned_image = image('unopenned.png')
