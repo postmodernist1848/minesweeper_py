@@ -1,11 +1,10 @@
-from typing import Deque
 import pyglet
 from collections import deque
 from pyglet.resource import image
 pyglet.resource.path = ['images', 'sounds']
 
-#класс клетки на минном поле
 class Cell(pyglet.sprite.Sprite):
+    '''Класс клетки на минном поле'''
     explosion_frames = image('0.png'), image('1.png'), image('2.png'), image('3.png'), image('4.png'), image('5.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
     explosion = pyglet.resource.media('explosion.wav', streaming=False)
