@@ -6,14 +6,15 @@ import random
 from cell import Cell
 
 #TODO:
-#менюшки
+#смайлик
+#менюшки, кнопка
 #запись рекордов по времени в сейв файл
 #улучшение масштабирования
 #три классические сложности
 #-------------- Строковые константы ---------------------------------------
-GAME = '☺'
-WIN = 'Вы выиграли!'
-LOSS = 'Вы проиграли!'
+GAME = ':)'
+WIN = '^ - ^'
+LOSS = '>_>'
 #---------------- Игра ---------------------------------------------------
 
 def get_neighbours(arr:list, i, j, radius=1):
@@ -36,6 +37,16 @@ batch = pyglet.graphics.Batch()
 game_window = Window(700, 700, "Сапёр", resizable=True)
 game_window.set_minimum_size(320, 400)
 pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
+
+
+class SmileyFace(pyglet.sprite.Sprite):
+    pass
+
+class Button(pyglet.sprite.Sprite):
+    pass
+
+class Menu(pyglet.sprite.Sprite):
+    pass
 
 
 class Timer(pyglet.text.Label):
@@ -172,9 +183,18 @@ class Main_game:
                 cell.scale = scale
                 cell.x = j * self.cell_size + self.game_offset_x
                 cell.y = i * self.cell_size
-        self.game_timer.x, self.game_timer.y, self.game_timer.font_size = self.game_offset_x, 57/70 * game_window.height, 32 * scale * self.font_scale
-        self.game_state_label.x, self.game_state_label.y, self.game_state_label.font_size = game_window.width // 2, game_window.height * 13/14, 32 * scale * self.font_scale
-        self.flag_number_label.x, self.flag_number_label.y, self.flag_number_label.font_size = self.game_offset_x + self.game_width * self.cell_size, 57/70 * game_window.height, 32 * scale * self.font_scale
+                
+        self.game_timer.x = self.game_offset_x
+        self.game_timer.y = 55/70 * game_window.height
+        self.game_timer.font_size = 32 * scale * self.font_scale
+
+        self.game_state_label.x = game_window.width // 2
+        self.game_state_label.y = game_window.height * 6/7
+        self.game_state_label.font_size = 32 * scale * self.font_scale
+
+        self.flag_number_label.x = self.game_offset_x + self.game_width * self.cell_size
+        self.flag_number_label.y =  55/70 * game_window.height
+        self.flag_number_label.font_size = 32 * scale * self.font_scale
         
 
     def update(self, dt):
