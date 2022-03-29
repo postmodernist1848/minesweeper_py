@@ -1,4 +1,5 @@
 import time
+from numpy import diff
 import pyglet
 from pyglet.window import key, Window
 import random
@@ -59,26 +60,13 @@ class Timer(pyglet.text.Label):
         cur_time =  time.time() - self.__start_time
         self.text = '{mins:0>2}:{secs:0>2}'.format(mins = int(cur_time / 60), secs = int(cur_time % 60))
 
-DIFFICULTY = 2
 #класс игры в сапер
 class Main_game:
     '''Основной класс игры'''
     win = pyglet.resource.media('win.wav')
     def __init__(self):
-        if DIFFICULTY == 1:
-            self.game_height = 8
-            self.game_width = 8
-            self.mines_number = 10 #целевое кол-во мин
-            self.scale_ratio = 13
-        if DIFFICULTY == 2:
-            self.game_height = 16
-            self.game_width = 16
-            self.mines_number = 40 #целевое кол-во мин
-            self.scale_ratio = 24
-
-        
-        
-        self.cell_size = min(game_window.width, game_window.height) // self.scale_ratio
+        self.set_difficulty(3)
+        self.cell_size = (min(game_window.width, game_window.height) - 100) // self.game_height
         self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
         self.game_state = GAME
         self.game_started = False
@@ -90,6 +78,7 @@ class Main_game:
         pyglet.clock.schedule_interval(self.update, 1/60)
         game_window.push_handlers(self)
     
+
     def minesweeper_matrix_clear(self):
         '''создание двумерного списка(матрицы), в соответствии с которой создается "минное поле"'''
         self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)]
@@ -108,7 +97,7 @@ class Main_game:
             mines_count = sum(sum(row) for row in generator_matrix)
         generator_matrix.reverse()
 
-        for i in range(self.game_height ):                                #генерация матрицы со значениями клеток
+        for i in range(self.game_height):                                #генерация матрицы со значениями клеток
             for j in range(self.game_width):
                 if generator_matrix[i][j] == 1:
                     self.minesweeper_matrix[i][j] = 'b'
@@ -120,7 +109,7 @@ class Main_game:
     def create_minefield(self):
         '''создание 'минного поля' из спрайтов'''
         self.cells = []
-        for y in range(0, self.game_width * self.cell_size, self.cell_size):
+        for y in range(0, self.game_height * self.cell_size, self.cell_size):
             row = []
             for x in range(0, self.game_width * self.cell_size, self.cell_size):
                 value = self.minesweeper_matrix[self.game_height - y//self.cell_size - 1][x//self.cell_size]
@@ -154,12 +143,28 @@ class Main_game:
                 for cell in row:
                     if cell.value != 'b':
                         cell.open()
+        elif symbol == key._1:
+            self.set_difficulty(1)
+            self.game_reset()
+            self.on_resize(game_window.width, game_window.height)
+        elif symbol == key._2:
+            self.set_difficulty(2)
+            self.game_reset()
+            self.on_resize(game_window.width, game_window.height)
+        elif symbol == key._3:
+            self.set_difficulty(3)
+            self.game_reset()
+            self.on_resize(game_window.width, game_window.height)
         elif symbol == key.R: #ресет игры
             self.game_reset()
         elif symbol == key.F11:
             game_window.set_fullscreen(1 - game_window.fullscreen)
+
     def on_resize(self, width, height):
-        self.cell_size = min(game_window.width + 100, game_window.height) // self.scale_ratio
+        self.cell_size = (game_window.width - 100) // self.game_width
+        if game_window.height - self.cell_size * self.game_height < 230:
+            self.cell_size = (game_window.height - 230) // self.game_height
+
         scale = self.cell_size / 30
         self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
         for i, row in enumerate(self.cells):
@@ -167,9 +172,9 @@ class Main_game:
                 cell.scale = scale
                 cell.x = j * self.cell_size + self.game_offset_x
                 cell.y = i * self.cell_size
-        self.game_timer.x, self.game_timer.y, self.game_timer.font_size = self.game_offset_x, 57/70 * game_window.height, 32 * scale
-        self.game_state_label.x, self.game_state_label.y, self.game_state_label.font_size = game_window.width // 2, game_window.height * 13/14, 32 * scale
-        self.flag_number_label.x, self.flag_number_label.y, self.flag_number_label.font_size = self.game_offset_x + self.game_width * self.cell_size, 57/70 * game_window.height, 32 * scale
+        self.game_timer.x, self.game_timer.y, self.game_timer.font_size = self.game_offset_x, 57/70 * game_window.height, 32 * scale * self.font_scale
+        self.game_state_label.x, self.game_state_label.y, self.game_state_label.font_size = game_window.width // 2, game_window.height * 13/14, 32 * scale * self.font_scale
+        self.flag_number_label.x, self.flag_number_label.y, self.flag_number_label.font_size = self.game_offset_x + self.game_width * self.cell_size, 57/70 * game_window.height, 32 * scale * self.font_scale
         
 
     def update(self, dt):
@@ -223,6 +228,30 @@ class Main_game:
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
+
+    def set_difficulty(self, difficulty):
+        if difficulty == 1:
+            self.game_height = 8
+            self.game_width = 8
+            self.mines_number = 10 #целевое кол-во мин
+            self.scale_ratio = 13
+            self.font_scale = difficulty / 2
+        elif difficulty == 2:
+            self.game_height = 16
+            self.game_width = 16
+            self.mines_number = 40 #целевое кол-во мин
+            self.scale_ratio = 24
+            self.font_scale = difficulty / 2
+        elif difficulty == 3:
+            self.game_height = 16
+            self.game_width = 30
+            self.mines_number = 99
+            self.scale_ratio = 35
+            self.font_scale = difficulty / 2
+            
+        else:
+            raise NotImplementedError
+        
 
     def show_field(self):
         for row in self.cells:
