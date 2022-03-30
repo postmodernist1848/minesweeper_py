@@ -59,8 +59,8 @@ class Cell(pyglet.sprite.Sprite):
             self.rmb_state = self.rmb_states_deque[0]
             self.image = self.rmb_states_dict[self.rmb_states_deque[0]]
             
-    def explode(self, force:bool=False):
-        if self.value == 'b' or force:
+    def explode(self):
+        if self.value == 'b':
             explosion_sprite = pyglet.sprite.Sprite(img=Cell.expl_ani, x=self.x, y=self.y, batch=self.batch)
             explosion_sprite.scale = self.scale
             Cell.explosion.play()

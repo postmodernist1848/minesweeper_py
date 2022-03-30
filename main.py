@@ -1,5 +1,5 @@
 import time
-from numpy import diff
+from tkinter import S
 import pyglet
 from pyglet.window import key, Window
 import random
@@ -209,7 +209,7 @@ class Main_game:
                         if cell.value == 'b':
                             self.game_state = LOSS
                             cell.value = 'bb'
-                            cell.explode(True)
+                            self.bb_cell = (i, j)
                             return
                         elif cell.unchecked:
                             for y, x in get_neighbours_index(self.cells, i, j):
@@ -225,8 +225,8 @@ class Main_game:
         else:                                                                      #конец игры
             self.show_field()
             if self.game_state == LOSS:
-                self.blown_up_counter = self.game_height * self.game_width - 1
-                pyglet.clock.schedule_interval(self.blow_up_field, 0.03)
+                self.blown_up_counter = 0
+                pyglet.clock.schedule_interval(self.blow_up_field, 0.02)
             self.game_state_label.text = self.game_state
             pyglet.clock.unschedule(self.update)
             self.game_timer.stop_timer()
@@ -280,9 +280,16 @@ class Main_game:
                 cell.open()
             
     def blow_up_field(self, dt):
-        self.cells[self.blown_up_counter // self.game_width][self.game_width - 1 - self.blown_up_counter % self.game_width].explode()
-        self.blown_up_counter -= 1
-        if self.blown_up_counter <= 0:
+        if self.blown_up_counter == 0:
+            self.to_explode = []
+            for i in range(1, max(self.game_width, self.game_height)):
+                for neighbour in get_neighbours(self.cells, *self.bb_cell, radius = i):
+                    if neighbour not in self.to_explode:
+                        self.to_explode.append(neighbour)
+
+        self.to_explode[self.blown_up_counter].explode()
+        self.blown_up_counter += 1
+        if self.blown_up_counter >= self.game_height * self.game_width:
             pyglet.clock.unschedule(self.blow_up_field)
 
 if __name__ == '__main__':
