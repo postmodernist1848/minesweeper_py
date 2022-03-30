@@ -5,6 +5,7 @@ pyglet.resource.path = ['images', 'sounds']
 
 class Cell(pyglet.sprite.Sprite):
     '''Класс клетки на минном поле'''
+    open_soundeffect = pyglet.resource.media("open_soundeffect.wav", streaming=False)
     explosion_frames = image('0.png'), image('1.png'), image('2.png'), image('3.png'), image('4.png'), image('5.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
     explosion = pyglet.resource.media('explosion.wav', streaming=False)
@@ -47,7 +48,8 @@ class Cell(pyglet.sprite.Sprite):
         self.scale = scale
 
     def open(self):
-        if self.rmb_state == 'x':
+        if self.rmb_state == 'x' and not self.openned:
+            Cell.open_soundeffect.play()
             self.openned = True
             self.image = Cell.values_dict[self.value]
 
