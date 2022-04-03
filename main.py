@@ -305,16 +305,17 @@ class Main_game:
                 cell.open()
             
     def blow_up_field(self, dt):
+        "взрыв поля вокруг кликнутой мины"
         if self.blown_up_counter == 0:
             self.to_explode = []
-            for i in range(1, max(self.game_width, self.game_height)):
+            for i in range(1, max(self.game_width - self.bb_cell[1], self.bb_cell[1], self.game_height - self.bb_cell[0], self.bb_cell[0])):
                 for neighbour in get_neighbours(self.cells, *self.bb_cell, radius = i):
                     if neighbour not in self.to_explode:
                         self.to_explode.append(neighbour)
 
         self.to_explode[self.blown_up_counter].explode()
         self.blown_up_counter += 1
-        if self.blown_up_counter >= self.game_height * self.game_width:
+        if self.blown_up_counter >= len(self.to_explode):
             pyglet.clock.unschedule(self.blow_up_field)
 
 if __name__ == '__main__':
