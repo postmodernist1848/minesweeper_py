@@ -1,7 +1,7 @@
 import time
-from tkinter import S
 import pyglet
 from pyglet.window import key, Window
+from pyglet.resource import image
 import random
 from cell import Cell
 
@@ -40,7 +40,29 @@ pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
 
 
 class SmileyFace(pyglet.sprite.Sprite):
-    pass
+    slightly_smiling_face_emoji = image("Slightly Smiling Face Emoji.png")
+    smiling_emoji_with_eye_opened = image("Smiling Emoji with Eyes Opened.png")
+    shyly_smiling_face_emoji = image("Shyly Smiling Face Emoji.png")
+    loudly_crying_face_emoji = image("Loudly Crying Face Emoji.png")
+    fearful_face_emoji = image("Fearful Face Emoji.png")
+    cold_sweat_emoji = image("Cold Sweat Emoji.png")
+    omg_face_emoji = image("OMG Face Emoji.png")
+    for img in (slightly_smiling_face_emoji, smiling_emoji_with_eye_opened, shyly_smiling_face_emoji, loudly_crying_face_emoji, fearful_face_emoji, cold_sweat_emoji, omg_face_emoji):
+        img.anchor_x = img.width // 2
+        img.anchor_y = img.height // 2
+
+    def __init__(self, x, y, scale=1, batch=None):
+        super().__init__(img = SmileyFace.slightly_smiling_face_emoji, x=x, y=y, batch=batch)
+        self.scale = scale
+    
+    def reset(self):
+        self.image = SmileyFace.slightly_smiling_face_emoji
+
+    def win(self):
+        self.image = random.choice((SmileyFace.smiling_emoji_with_eye_opened, SmileyFace.shyly_smiling_face_emoji))
+    
+    def loss(self):
+        self.image = random.choice((SmileyFace.loudly_crying_face_emoji, SmileyFace.fearful_face_emoji, SmileyFace.cold_sweat_emoji, SmileyFace.omg_face_emoji))
 
 class Button(pyglet.sprite.Sprite):
     pass
@@ -82,7 +104,8 @@ class Main_game:
         self.game_state = GAME
         self.game_started = False
         self.game_timer = Timer(x=self.game_offset_x, y=57/70 * game_window.height, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
-        self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height * 13/14, batch=batch) 
+        self.smiley_face = SmileyFace( x=game_window.width // 2, y=game_window.height * 13/14, batch=batch)
+        #self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height * 13/14, batch=batch) 
         self.flag_number_label = pyglet.text.Label(text=f'*:{self.mines_number}', font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='right', align='right', x=self.game_offset_x + self.game_width * self.cell_size, y= 57/70 * game_window.height, batch=batch)
         self.minesweeper_matrix_clear()
         self.create_minefield()
@@ -188,9 +211,9 @@ class Main_game:
         self.game_timer.y = 55/70 * game_window.height
         self.game_timer.font_size = 32 * scale * self.font_scale
 
-        self.game_state_label.x = game_window.width // 2
-        self.game_state_label.y = game_window.height * 6/7
-        self.game_state_label.font_size = 32 * scale * self.font_scale
+        self.smiley_face.x = game_window.width // 2
+        self.smiley_face.y = game_window.height * 6/7
+        self.smiley_face.scale = scale * 0.2
 
         self.flag_number_label.x = self.game_offset_x + self.game_width * self.cell_size
         self.flag_number_label.y =  55/70 * game_window.height
@@ -225,9 +248,11 @@ class Main_game:
         else:                                                                      #конец игры
             self.show_field()
             if self.game_state == LOSS:
+                self.smiley_face.loss()
                 self.blown_up_counter = 0
                 pyglet.clock.schedule_interval(self.blow_up_field, 0.02)
-            self.game_state_label.text = self.game_state
+            else:
+                self.smiley_face.win()
             pyglet.clock.unschedule(self.update)
             self.game_timer.stop_timer()
 
@@ -242,7 +267,7 @@ class Main_game:
         '''ресет игры'''
         self.game_state = GAME
         self.game_started = False
-        self.game_state_label.text = self.game_state
+        self.smiley_face.reset()
         self.game_timer.reset_timer()
         pyglet.clock.unschedule(self.blow_up_field)
         self.minesweeper_matrix_clear()
