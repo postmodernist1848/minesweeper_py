@@ -6,15 +6,16 @@ import random
 from cell import Cell
 
 #TODO:
-#смайлик
-#менюшки, кнопка
+#менюшки, кнопка - доделать
 #запись рекордов по времени в сейв файл
 #улучшение масштабирования
-#три классические сложности
-#-------------- Строковые константы ---------------------------------------
+
+#-------------- константы и настройки ------------------------------------
+DARK_THEME = 0
 GAME = ':)'
 WIN = '^ - ^'
 LOSS = '>_>'
+PAUSE = "......time_stopped......."
 #---------------- Игра ---------------------------------------------------
 
 def get_neighbours(arr:list, i, j, radius=1):
@@ -33,11 +34,17 @@ def get_neighbours_index(arr:list, i, j, radius=1):
 
 #----------------------------------------------------------------------------
 
-batch = pyglet.graphics.Batch()
 game_window = Window(700, 700, "Сапёр", resizable=True)
-game_window.set_minimum_size(320, 400)
-pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
+game_window.set_minimum_size(600, 450)
 
+if DARK_THEME:
+    pyglet.gl.glClearColor(100/255, 100/255, 100/255, 1)
+else:
+    pyglet.gl.glClearColor(173/255, 216/255, 230/255, 1)
+batch = pyglet.graphics.Batch()
+game_layer = pyglet.graphics.OrderedGroup(0)
+menu_layer = pyglet.graphics.OrderedGroup(1)
+menu_text_layer = pyglet.graphics.OrderedGroup(2)
 
 class SmileyFace(pyglet.sprite.Sprite):
     slightly_smiling_face_emoji = image("Slightly Smiling Face Emoji.png")
@@ -51,8 +58,8 @@ class SmileyFace(pyglet.sprite.Sprite):
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
 
-    def __init__(self, x, y, scale=1, batch=None):
-        super().__init__(img = SmileyFace.slightly_smiling_face_emoji, x=x, y=y, batch=batch)
+    def __init__(self, x, y, scale=1, batch=None, group=None):
+        super().__init__(img = SmileyFace.slightly_smiling_face_emoji, x=x, y=y, batch=batch, group = group)
         self.scale = scale
     
     def reset(self):
@@ -65,17 +72,88 @@ class SmileyFace(pyglet.sprite.Sprite):
         self.image = random.choice((SmileyFace.loudly_crying_face_emoji, SmileyFace.fearful_face_emoji, SmileyFace.cold_sweat_emoji, SmileyFace.omg_face_emoji))
 
 class Button(pyglet.sprite.Sprite):
-    pass
+    '''Класс кнопки на экране'''
+    def __init__(self, img, scale=1, *args, **kwargs):
+        super().__init__(img=img, *args, **kwargs)
+        self.scale = scale
+        self.active = True
+        game_window.push_handlers(self)
 
-class Menu(pyglet.sprite.Sprite):
-    pass
+    def on_mouse_press(self, x, y, button, modifiers):
+        if self.active and self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height:
+            self.press()
+    
+    def press(self):
+        raise NotImplementedError
+            
+    def activate(self):
+        self.active = True
+        self.visible = True
+
+    def deactivate(self):
+        self.active = False
+        self.visible = False
+
+class SettingsButton(Button):
+    button_image = image("settings_button.png")
+    def __init__(self, scale=1, *args, **kwargs):
+        super().__init__(img=SettingsButton.button_image, scale = scale, *args, **kwargs)
+        self.active = True
+        self.visible = True
+
+    def press(self):
+        self.deactivate()
+        settings_menu.activate()
+
+class SettingsMenuCloseButton(Button):
+    button_image = image("close_button.png")
+    def __init__(self, scale=1, *args, **kwargs):
+        super().__init__(img=SettingsMenuCloseButton.button_image, scale = scale, *args, **kwargs)
+        self.active = False
+        self.visible = False
+
+    def press(self):
+        self.deactivate()
+        settings_menu.deactivate()
+        settings_button.activate()
+
+class SettingsMenu(pyglet.sprite.Sprite):
+    settings_menu_image = image("settings_menu.png")
+    settings_menu_image.anchor_x = settings_menu_image.width // 2
+    settings_menu_image.anchor_y = settings_menu_image.height // 2
+
+    def __init__(self, x, y, scale=1, batch=None, group=None):
+        super().__init__(img=SettingsMenu.settings_menu_image, x=x, y=y, batch=batch, group=group)
+        self.scale = scale
+        self.active = False
+        self.visible = False
+        close_button_scale = 0.25
+        self.close_button = SettingsMenuCloseButton(x=self.x + self.width // 2 - 200 * close_button_scale, y = self.y + self.height // 2 - 200 * close_button_scale, scale = close_button_scale, batch=batch, group=menu_layer)
+        self.settings_label = pyglet.text.Label(text='Настройки', font_name = "Times New Roman", font_size = 32, x=self.x, y=self.y, anchor_x='center', batch=batch, group=menu_text_layer, color=(0,0,0,255))
+        self.settings_label.visible = False
+        game_window.push_handlers(self)
+        
+
+    def activate(self):
+        self.active = True
+        self.visible = True
+        self.old_game_state = main_game.game_state
+        main_game.game_state = PAUSE
+        self.close_button.activate()
+        self.settings_label.visible = True
+
+    def deactivate(self):
+        self.active = False
+        self.visible = False
+        main_game.game_state = self.old_game_state
+        self.settings_label.visible = False
 
 
 class Timer(pyglet.text.Label):
     '''Таймер для игры'''
     def __init__(self, *args, **kwargs):
         super(Timer, self).__init__('00:00', *args, **kwargs)
-
+        
 
     def start_timer(self):
         self.reset_timer()
@@ -93,7 +171,11 @@ class Timer(pyglet.text.Label):
         cur_time =  time.time() - self.__start_time
         self.text = '{mins:0>2}:{secs:0>2}'.format(mins = int(cur_time / 60), secs = int(cur_time % 60))
 
-#класс игры в сапер
+#-----------------------------------------------------------------------------------------------#
+settings_button = SettingsButton(x=0, y=game_window.width - 200 * 0.25, scale = 0.25, batch=batch, group=menu_layer)
+settings_menu = SettingsMenu(game_window.width  // 2, game_window.height // 2, batch=batch, group=menu_layer)
+#-----------------------------------------------------------------------------------------------#
+
 class Main_game:
     '''Основной класс игры'''
     win = pyglet.resource.media('win.wav')
@@ -103,10 +185,10 @@ class Main_game:
         self.game_offset_x = (game_window.width - self.game_width * self.cell_size) // 2
         self.game_state = GAME
         self.game_started = False
-        self.game_timer = Timer(x=self.game_offset_x, y=57/70 * game_window.height, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch)
-        self.smiley_face = SmileyFace( x=game_window.width // 2, y=game_window.height * 13/14, batch=batch)
-        #self.game_state_label = pyglet.text.Label(text=GAME, font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='center', align='center', x=game_window.width // 2, y=game_window.height * 13/14, batch=batch) 
-        self.flag_number_label = pyglet.text.Label(text=f'*:{self.mines_number}', font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='right', align='right', x=self.game_offset_x + self.game_width * self.cell_size, y= 57/70 * game_window.height, batch=batch)
+        self.game_timer = Timer(x=self.game_offset_x, y=57/70 * game_window.height, font_size=32, dpi = 150, color=(0,0,0,255), batch=batch, group=game_layer)
+        self.smiley_face = SmileyFace( x=game_window.width // 2, y=game_window.height * 13/14, batch=batch, group=game_layer)
+        self.flag_number_label = pyglet.text.Label(text=f'*:{self.mines_number}', font_name = 'Consolas', color=(0,0,0,255), bold=True, font_size=32, dpi=150, anchor_x='right', align='right', x=self.game_offset_x + self.game_width * self.cell_size, y= 57/70 * game_window.height, batch=batch, group=game_layer)
+
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
@@ -147,7 +229,7 @@ class Main_game:
             row = []
             for x in range(0, self.game_width * self.cell_size, self.cell_size):
                 value = self.minesweeper_matrix[self.game_height - y//self.cell_size - 1][x//self.cell_size]
-                row.append(Cell(value=value, x=x + self.game_offset_x, y=y, scale = self.cell_size / 30, batch=batch)) 
+                row.append(Cell(value=value, x=x + self.game_offset_x, y=y, scale = self.cell_size / 30, batch=batch, group=game_layer)) 
             self.cells.append(row)
 
     def __in_minefield_range(self, x, y): return self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width and 0 <= y < self.cell_size * self.game_height
@@ -156,7 +238,10 @@ class Main_game:
         if self.game_state == GAME:
             if button == pyglet.window.mouse.LEFT:
                 if self.__in_minefield_range(x, y):
-                    self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].open()  #лкм - открытие клетки 
+                    cell = self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size]
+                    if not cell.openned:
+                        cell.open(True)  #лкм - открытие клетки 
+                        
                     if not self.game_started:
                         self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
             elif button == pyglet.window.mouse.RIGHT and self.__in_minefield_range(x, y):
@@ -166,7 +251,9 @@ class Main_game:
                 rmb_states = [cell.rmb_state for cell in neighbours]
                 if rmb_states.count('f') == self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size].value:
                     for cell in neighbours:
-                        cell.open()
+                        if not cell.openned and cell.rmb_state == 'x':
+                            cell.open(True)
+                            
                     
         elif self.game_state == LOSS:
             pyglet.clock.unschedule(self.blow_up_field)
@@ -219,11 +306,16 @@ class Main_game:
         self.flag_number_label.y =  55/70 * game_window.height
         self.flag_number_label.font_size = 32 * scale * self.font_scale
         
+        settings_button.y = game_window.height - 200 * settings_button.scale
+        settings_menu.x = game_window.width // 2
+        settings_menu.y = game_window.height // 2
 
     def update(self, dt):
         '''метод обновления состояния игры'''
         openned_counter = 0
         flagged = 0
+        if self.game_state == PAUSE:
+            return
         if self.game_state == GAME:
             for i, row in enumerate(self.cells):
                 for j, cell in enumerate(row):
@@ -237,6 +329,8 @@ class Main_game:
                         elif cell.unchecked:
                             for y, x in get_neighbours_index(self.cells, i, j):
                                 self.cells[y][x].open()
+                                
+
                             cell.unchecked = False
                     elif cell.rmb_state == 'f':
                         flagged += 1
@@ -312,13 +406,13 @@ class Main_game:
                 for neighbour in get_neighbours(self.cells, *self.bb_cell, radius = i):
                     if neighbour not in self.to_explode:
                         self.to_explode.append(neighbour)
-
         self.to_explode[self.blown_up_counter].explode()
         self.blown_up_counter += 1
         if self.blown_up_counter >= len(self.to_explode):
             pyglet.clock.unschedule(self.blow_up_field)
 
 if __name__ == '__main__':
+    
     main_game = Main_game()
 
     @game_window.event

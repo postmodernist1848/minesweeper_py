@@ -47,11 +47,13 @@ class Cell(pyglet.sprite.Sprite):
         super(Cell, self).__init__(Cell.unopenned_image, x=x, y=y, batch=batch, group=group)
         self.scale = scale
 
-    def open(self):
-        if self.rmb_state == 'x' and not self.openned:
-            Cell.open_soundeffect.play()
+    def open(self, sound:bool=False):
+        if self.rmb_state == 'x':
             self.openned = True
             self.image = Cell.values_dict[self.value]
+        if sound:
+            Cell.open_soundeffect.play()
+
 
     def on_rmb(self):
         if not self.openned:
@@ -66,3 +68,6 @@ class Cell(pyglet.sprite.Sprite):
             Cell.explosion.play()
 
 
+if __name__ == "__main__":
+    cell = Cell()
+    cell.open()
