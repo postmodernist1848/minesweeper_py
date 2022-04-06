@@ -1,7 +1,7 @@
 import time
 import pyglet
 from pyglet.window import key, Window
-from pyglet.resource import image
+from pyglet.image import load
 import random
 from cell import Cell
 
@@ -47,13 +47,13 @@ menu_layer = pyglet.graphics.OrderedGroup(1)
 menu_text_layer = pyglet.graphics.OrderedGroup(2)
 
 class SmileyFace(pyglet.sprite.Sprite):
-    slightly_smiling_face_emoji = image("Slightly Smiling Face Emoji.png")
-    smiling_emoji_with_eye_opened = image("Smiling Emoji with Eyes Opened.png")
-    shyly_smiling_face_emoji = image("Shyly Smiling Face Emoji.png")
-    loudly_crying_face_emoji = image("Loudly Crying Face Emoji.png")
-    fearful_face_emoji = image("Fearful Face Emoji.png")
-    cold_sweat_emoji = image("Cold Sweat Emoji.png")
-    omg_face_emoji = image("OMG Face Emoji.png")
+    slightly_smiling_face_emoji = load("images/Slightly Smiling Face Emoji.png")
+    smiling_emoji_with_eye_opened = load("images/Smiling Emoji with Eyes Opened.png")
+    shyly_smiling_face_emoji = load("images/Shyly Smiling Face Emoji.png")
+    loudly_crying_face_emoji = load("images/Loudly Crying Face Emoji.png")
+    fearful_face_emoji = load("images/Fearful Face Emoji.png")
+    cold_sweat_emoji = load("images/Cold Sweat Emoji.png")
+    omg_face_emoji = load("images/OMG Face Emoji.png")
     for img in (slightly_smiling_face_emoji, smiling_emoji_with_eye_opened, shyly_smiling_face_emoji, loudly_crying_face_emoji, fearful_face_emoji, cold_sweat_emoji, omg_face_emoji):
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
@@ -95,7 +95,7 @@ class Button(pyglet.sprite.Sprite):
         self.visible = False
 
 class SettingsButton(Button):
-    button_image = image("settings_button.png")
+    button_image = load("images/settings_button.png")
     def __init__(self, scale=1, *args, **kwargs):
         super().__init__(img=SettingsButton.button_image, scale = scale, *args, **kwargs)
         self.active = True
@@ -106,7 +106,7 @@ class SettingsButton(Button):
         settings_menu.activate()
 
 class SettingsMenuCloseButton(Button):
-    button_image = image("close_button.png")
+    button_image = load("images/close_button.png")
     def __init__(self, scale=1, *args, **kwargs):
         super().__init__(img=SettingsMenuCloseButton.button_image, scale = scale, *args, **kwargs)
         self.active = False
@@ -118,7 +118,7 @@ class SettingsMenuCloseButton(Button):
         settings_button.activate()
 
 class SettingsMenu(pyglet.sprite.Sprite):
-    settings_menu_image = image("settings_menu.png")
+    settings_menu_image = load("images/settings_menu.png")
     settings_menu_image.anchor_x = settings_menu_image.width // 2
     settings_menu_image.anchor_y = settings_menu_image.height // 2
 
@@ -178,7 +178,7 @@ settings_menu = SettingsMenu(game_window.width  // 2, game_window.height // 2, b
 
 class Main_game:
     '''Основной класс игры'''
-    win = pyglet.resource.media('win.wav')
+    win = pyglet.media.load('sounds/win.wav')
     def __init__(self):
         self.set_difficulty(3)
         self.cell_size = (min(game_window.width, game_window.height) - 100) // self.game_height
@@ -240,8 +240,7 @@ class Main_game:
                 if self.__in_minefield_range(x, y):
                     cell = self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size]
                     if not cell.openned:
-                        cell.open(True)  #лкм - открытие клетки 
-                        
+                        cell.open(True)  #лкм - открытие клетки                        
                     if not self.game_started:
                         self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
             elif button == pyglet.window.mouse.RIGHT and self.__in_minefield_range(x, y):
@@ -363,7 +362,11 @@ class Main_game:
         self.game_started = False
         self.smiley_face.reset()
         self.game_timer.reset_timer()
+        for row in self.cells:
+            for cell in row:
+                cell.delete()
         pyglet.clock.unschedule(self.blow_up_field)
+        
         self.minesweeper_matrix_clear()
         self.create_minefield()
         pyglet.clock.schedule_interval(self.update, 1/60)
@@ -387,7 +390,6 @@ class Main_game:
             self.mines_number = 99
             self.scale_ratio = 35
             self.font_scale = difficulty / 2
-            
         else:
             raise NotImplementedError
         

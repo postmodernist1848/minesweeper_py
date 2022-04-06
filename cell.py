@@ -1,28 +1,28 @@
 import pyglet
 from collections import deque
-from pyglet.resource import image
-pyglet.resource.path = ['images', 'sounds']
+from pyglet.image import load
+
 
 class Cell(pyglet.sprite.Sprite):
     '''Класс клетки на минном поле'''
-    open_soundeffect = pyglet.resource.media("open_soundeffect.wav", streaming=False)
-    explosion_frames = image('0.png'), image('1.png'), image('2.png'), image('3.png'), image('4.png'), image('5.png')
+    open_soundeffect = pyglet.media.load("sounds/open_soundeffect.wav", streaming=False)
+    explosion_frames = load('images/0.png'), load('images/1.png'), load('images/2.png'), load('images/3.png'), load('images/4.png'), load('images/5.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
-    explosion = pyglet.resource.media('explosion.wav', streaming=False)
-    unopenned_image = image('unopenned.png')
-    bomb_image = image('bomb.png')
-    bomb_blownup_image = image('bomb_blownup.png')
-    zero_image = image('zero.png')
-    one_image = image('one.png')
-    two_image = image('two.png')
-    three_image = image('three.png')
-    four_image = image('four.png')
-    five_image = image('five.png')
-    six_image = image('six.png')
-    seven_image = image('seven.png')
-    eight_image = image('eight.png')
-    flag_image = image('flag.png')
-    question_mark_image = image('question_mark.png')
+    explosion = pyglet.media.load('sounds/explosion.wav', streaming=False)
+    unopenned_image = load('images/unopenned.png')
+    bomb_image = load('images/bomb.png')
+    bomb_blownup_image = load('images/bomb_blownup.png')
+    zero_image = load('images/zero.png')
+    one_image = load('images/one.png')
+    two_image = load('images/two.png')
+    three_image = load('images/three.png')
+    four_image = load('images/four.png')
+    five_image = load('images/five.png')
+    six_image = load('images/six.png')
+    seven_image = load('images/seven.png')
+    eight_image = load('images/eight.png')
+    flag_image = load('images/flag.png')
+    question_mark_image = load('images/question_mark.png')
     values_dict = {0:zero_image, 
                     1:one_image, 
                     2:two_image, 
