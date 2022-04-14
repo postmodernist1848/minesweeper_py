@@ -4,7 +4,7 @@ from pyglet.image import load
 
 
 class Cell(pyglet.sprite.Sprite):
-    '''Класс клетки на минном поле'''
+    '''A cell in the minefield.'''
     open_soundeffect = pyglet.media.load("sounds/open_soundeffect.wav", streaming=False)
     explosion_frames = load('images/0.png'), load('images/1.png'), load('images/2.png'), load('images/3.png'), load('images/4.png'), load('images/5.png')
     expl_ani = pyglet.image.Animation.from_image_sequence(explosion_frames, duration=0.2, loop=False)
