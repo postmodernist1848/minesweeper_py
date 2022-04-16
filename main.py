@@ -164,6 +164,7 @@ class SettingsMenu(pyglet.sprite.Sprite):
         self.difficulty_button_1 = DifficultyButton(1, x=200, y=200, batch = batch, group = menu_elements_layer)
         self.difficulty_button_2 = DifficultyButton(2, x=300, y=200, batch = batch, group = menu_elements_layer)
         self.difficulty_button_3 = DifficultyButton(3, x=400, y=200, batch = batch, group = menu_elements_layer)
+        self.pressed_cells = []
         game_window.push_handlers(self)
 
     def activate(self):
@@ -260,7 +261,7 @@ class Main_game:
         generator_matrix = [[0] * (self.game_width) for _ in range(self.game_height)] #a matrix with zeros and ones
         self.minesweeper_matrix = [[0] * self.game_width for _ in range(self.game_height)] #a matrix with numbers and 'b' (bomb)
 
-        while mines_count < self.mines_number:                       #generating a matrix with a needed number of mines. Clicked cell is never a mine + a few cells around it
+        while mines_count < self.mines_number:           #generating a matrix with a needed number of mines. Clicked cell is never a mine + a few cells around it creatin an open space and making every gen playable
             row = random.choice(generator_matrix)
             row[random.randrange(len(row))] = 1 
             for i, j in get_neighbours_index(generator_matrix, y, x):
@@ -290,13 +291,32 @@ class Main_game:
 
     def __in_minefield_range(self, x, y): return self.game_offset_x <= x < self.game_offset_x + self.cell_size * self.game_width and 0 <= y < self.cell_size * self.game_height
 
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self.game_state == GAME and buttons == pyglet.window.mouse.LEFT:
+            for row in self.cells:
+                for cell in row:
+                    cell.depress()
+            if self.__in_minefield_range(x, y):
+                cell = self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size]  
+                cell.press()
+            
     def on_mouse_press(self, x, y, button, modifiers):
+        if self.game_state == GAME and button == pyglet.window.mouse.LEFT:
+            for row in self.cells:
+                for cell in row:
+                    cell.depress()
+            if self.__in_minefield_range(x, y):
+                cell = self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size]  
+                cell.press()
+        if self.game_state == LOSS and button == pyglet.window.mouse.LEFT:
+            pyglet.clock.unschedule(self.blow_up_field)
+
+    def on_mouse_release(self, x, y, button, modifiers):
         if self.game_state == GAME:
             if button == pyglet.window.mouse.LEFT:
                 if self.__in_minefield_range(x, y):
-                    cell = self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size]
-                    if not cell.openned:
-                        cell.open(True)  #lmb - open cell                        
+                    cell = self.cells[y // self.cell_size][(x - self.game_offset_x) // self.cell_size]  
+                    cell.open(True)  #lmb - open cell                        
                     if not self.game_started:
                         self.game_start((x - self.game_offset_x) // self.cell_size, y // self.cell_size)               
             elif button == pyglet.window.mouse.RIGHT and self.__in_minefield_range(x, y):
@@ -308,10 +328,8 @@ class Main_game:
                     for cell in neighbours:
                         if not cell.openned and cell.rmb_state == 'x':
                             cell.open(True)
-                            
-                    
-        elif self.game_state == LOSS:
-            pyglet.clock.unschedule(self.blow_up_field)
+
+
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.C:  #Cheats
@@ -337,9 +355,8 @@ class Main_game:
             game_window.set_fullscreen(1 - game_window.fullscreen)
 
     def on_resize(self, width, height):
-        '''Resolution scaling method'''
-
-        indent = height / 5
+        '''Resolution scaling method.'''
+        indent = height / 4.5
         self.cell_size = int((height - indent) / self.game_height)
         if self.cell_size * self.game_width / 0.97 > width:
             self.cell_size = int(width / self.game_width * 0.97)
@@ -348,7 +365,7 @@ class Main_game:
         scale = self.cell_size / 30
         self.game_offset_x = (width - self.game_width * self.cell_size) // 2
         #TODO: y_offset maybe? Haven't decided yet.
-        
+
         #Setting the cells' xs and sizes to the calculated values
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
@@ -371,9 +388,7 @@ class Main_game:
         self.flag_number_label.y =  middle
 
         self.flag_number_label.font_size = 32 * scale * self.font_scale
-        
         settings_button.y = game_window.height - 200 * settings_button.scale
-        settings_menu.on_resize(width, height)
 
     def update(self, dt):
         '''Game state update method.'''
